@@ -1,5 +1,8 @@
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.io.BufferedOutputStream;
@@ -11,7 +14,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.awt.image.BufferedImage;
 
-public class ImageReader{
+public class Main{
 	
 	public static long totalOutputRunTime = 0;
 	public static long totalAnalyzeRunTime = 0;
@@ -39,6 +42,7 @@ public class ImageReader{
 		String endYear = returnVals[1];
 		String scenName = returnVals[2];
 		
+		ensureOutputDirExists(outputDir);
 		initPrintStream(outputDataPath, seedDataPath);
 		
 		Sleuth thread1 = new Sleuth(rootPath, scenPath, outputDir, endYear, scenName, iterations, img, outputDataPath, seedDataPath);
@@ -155,5 +159,13 @@ public class ImageReader{
 		returnVals[1] = endYear;
 		returnVals[2] = scenName;
 		return returnVals;
+	}
+	
+	public static void ensureOutputDirExists(String outputDir){
+		Path path = Paths.get(outputDir);
+		if(!Files.exists(path)){
+			console.println("SLEUTH output directory does not exist. Creating directory to prevent SLEUTH errors.");
+			new File(outputDir).mkdir();
+		}
 	}
 }

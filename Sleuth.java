@@ -8,7 +8,6 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-
 import javax.swing.SwingWorker;
 
 public class Sleuth extends SwingWorker<Void, String>{
@@ -38,35 +37,23 @@ public class Sleuth extends SwingWorker<Void, String>{
 		seedDataPath = seed;
 	}
 	
-	public void run(String rootPath, String scenPath){
-		Gui.progressBar.setIndeterminate(true);
-		console.println("Running SLEUTH...");
-		Timer sleuthRunTime = new Timer(System.nanoTime());
-		try {
-			Process proc = new ProcessBuilder(rootPath + "\\grow.exe", "predict", scenPath).start();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		this.addTotalTime(sleuthRunTime.time());
-		this.runOtherProcs(1);
-	}
-	
 	public void run(String rootPath, String scenPath, int iterations){
 		Timer sleuthRunTime = new Timer(System.nanoTime());
 		for(int i = 0; i < iterations; i++){
 			try {
 				String output = "Running SLEUTH, iteration " + (i + 1) + " of " + iterations;
-				Gui.updateStatusBar(output);
+				publish(output);
 				Process proc = new ProcessBuilder(rootPath + "\\grow.exe", "predict", scenPath).start();
 				BufferedReader input = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 				while(input.readLine() != null){}
 				proc.waitFor();
-				this.runOtherProcs(i);
+				img = ImageAnalysis.openImageFile(img, outputDir, endYear, scenName);
+				ImageAnalysis.analyzeImageFile(img, i, fullDataPath, seedDataPath);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			} 
+			}
 		}
 		this.addTotalTime(sleuthRunTime.time());
 	}
@@ -155,9 +142,12 @@ public class Sleuth extends SwingWorker<Void, String>{
 			try {
 				String output = "Running SLEUTH, iteration " + (i + 1) + " of " + iterations;
 				publish(output);
+				console.println(scenPath);
 				Process proc = new ProcessBuilder(rootPath + "\\grow.exe", "predict", scenPath).start();
 				BufferedReader input = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-				while(input.readLine() != null){}
+				while(input.readLine() != null){
+					console.println(input.readLine());
+				}
 				proc.waitFor();
 				img = ImageAnalysis.openImageFile(img, outputDir, endYear, scenName);
 				ImageAnalysis.analyzeImageFile(img, i, fullDataPath, seedDataPath);
@@ -181,6 +171,6 @@ public class Sleuth extends SwingWorker<Void, String>{
 		Gui.progressBar.setIndeterminate(false);
 		NumberFormat formatter = new DecimalFormat("#0.00000");
 		Gui.progressBar.setString("Done! Total execution time is " + formatter.format(totalSleuthRunTime / 1000000000d) + " seconds.");
-		ImageReader.outputTimers(this.getTotalTime());
+		Main.outputTimers(this.getTotalTime());
 	}
 }

@@ -1,13 +1,12 @@
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
-
 import java.awt.event.*;
 import java.io.File;
 
 public class Gui extends JFrame
 {
-	private static final int DEBUG = 2;
+	private static final boolean DEBUG = true;
 	
 	private static final long serialVersionUID = 1L;
 	private static final int WIDTH = 600;
@@ -105,17 +104,10 @@ public class Gui extends JFrame
 		
 		progressBar.setStringPainted(true);
 		progressBar.setString("Awaiting user input...");
-		//progressBar.setIndeterminate(true);
 		
-		if(DEBUG == 1){
-			sleuthRootTF.setText("C:\\Users\\Chris\\Documents\\Sleuth\\SLEUTH3r");
-			sleuthScenarioTF.setText("C:\\Users\\Chris\\Documents\\Sleuth\\SLEUTH3r\\scenario.SC060_1880_predict02");
-			dataOutputTF.setText("C:\\Users\\Chris\\Documents");
-			numIterationsTF.setText("1");
-		}
-		if(DEBUG == 2){
+		if(DEBUG){
 			sleuthRootTF.setText("C:\\Sleuth\\SLEUTH3r");
-			sleuthScenarioTF.setText("C:\\Sleuth\\SLEUTH3r\\scenario.SC060_1880_predict02");
+			sleuthScenarioTF.setText("C:\\Sleuth\\SLEUTH3r\\scenario.SC060_1880_predict01");
 			dataOutputTF.setText("C:\\Sleuth");
 			numIterationsTF.setText("1");
 		}
@@ -171,7 +163,7 @@ public class Gui extends JFrame
 			updateStatusBar("Processing...");
 			progressBar.setIndeterminate(true);
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			ImageReader.main(args);
+			Main.main(args);
 		}
 	}
 	
