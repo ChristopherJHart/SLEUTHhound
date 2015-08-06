@@ -2,11 +2,15 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.event.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Gui extends JFrame
 {
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	
 	private static final long serialVersionUID = 1L;
 	private static final int WIDTH = 600;
@@ -15,6 +19,8 @@ public class Gui extends JFrame
 	private static final int vGap = 5;
 	
 	public static JProgressBar progressBar = new JProgressBar();
+	public static JLabel timeLabel = new JLabel("Estimated job time: ");
+	public static JLabel totalTimeLabel = new JLabel("Total job time: ~");
 	
 	private JLabel sleuthRootL, sleuthScenarioL, dataOutputL, numIterationsL;
 	private JTextField sleuthRootTF, sleuthScenarioTF, dataOutputTF, numIterationsTF;
@@ -47,7 +53,7 @@ public class Gui extends JFrame
 		dataOutputTF = new JTextField(1024);
 		numIterationsTF = new JTextField(10);
 		
-		//SPecify handlers for each button and add (register) ActionListeners to each button.
+		//Specify handlers for each button and add (register) ActionListeners to each button.
 		sleuthRootB = new JButton("Browse");
 		sleuthScenarioB = new JButton("Browse");
 		dataOutputB = new JButton("Browse");
@@ -87,10 +93,11 @@ public class Gui extends JFrame
 		
 		topPane.add(numIterationsL);
 		topPane.add(numIterationsTF);
-		topPane.add(new JLabel("")); // Empty spacer
+		topPane.add(totalTimeLabel);
 		
 		topPane.add(new JLabel("")); // Empty spacer
 		topPane.add(sleuthRunB);
+		topPane.add(timeLabel);
 		
 		JPanel statusBar = new JPanel();
 		statusBar.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -98,16 +105,27 @@ public class Gui extends JFrame
 		statusBar.setSize(WIDTH, 16);
 		statusBar.add(progressBar);
 		
+		/**JPanel timeBar = new JPanel();
+		timeBar.setBorder(new BevelBorder(BevelBorder.LOWERED));
+		timeBar.setLayout(new BorderLayout());
+		timeBar.setSize(WIDTH, 8);
+		timeBar.add(timeLabel);**/
+		
 		primFrame.add(topPane);
 		primFrame.add(statusBar, BorderLayout.SOUTH);	
+		//primFrame.add(timeBar, BorderLayout.SOUTH);
 		primFrame.setVisible(true);
 		
 		progressBar.setStringPainted(true);
 		progressBar.setString("Awaiting user input...");
 		
+		if(checkForSettingsFile()){
+			setTextToSettings(sleuthRootTF, sleuthScenarioTF, dataOutputTF, numIterationsTF);
+		}
+		
 		if(DEBUG){
 			sleuthRootTF.setText("C:\\Sleuth\\SLEUTH3r");
-			sleuthScenarioTF.setText("C:\\Sleuth\\SLEUTH3r\\scenario.SC060_1880_predict01");
+			sleuthScenarioTF.setText("C:\\Sleuth\\SLEUTH3r\\scenario.SC060_1880_predict02");
 			dataOutputTF.setText("C:\\Sleuth");
 			numIterationsTF.setText("1");
 		}
@@ -168,7 +186,15 @@ public class Gui extends JFrame
 	}
 	
 	public static void updateStatusBar(String str){
-			progressBar.setString(str);
+		progressBar.setString(str);
+	}
+	
+	public static void updateTimeLabel(String str){
+		timeLabel.setText("Estimated job time: " + str + " seconds.");
+	}
+	
+	public static void updateTotalTimeLabel(String str){
+		totalTimeLabel.setText("Total job time: ~" + str + " seconds.");
 	}
 	
 	public static void setProgressBarDeterminate(boolean bool){
@@ -187,5 +213,62 @@ public class Gui extends JFrame
 				Gui guiObj = new Gui();
 			}
 		});
+	}
+	
+	public static boolean checkForSettingsFile(){
+		File settings = Main.getSettingsDirectory();
+		if(settings.exists()){
+			return true;
+		}
+		else return false;
+	}
+	
+	public static void setTextToSettings(JTextField sleuthRootTF, JTextField sleuthScenarioTF, JTextField dataOutputTF, JTextField numIterationsTF){
+		BufferedReader reader = null;
+		String rootPath = null;
+		String scenPath = null;
+		String dataPath = null;
+		String numIterations = null;
+		try{
+			reader = new BufferedReader(new FileReader(Main.getSettingsDirectory()));
+			String text;
+			while((text = reader.readLine()) != null){
+				if(!text.isEmpty()){
+					String substr = text.substring(0, text.indexOf('='));
+					if(substr.trim().equals("ROOT_DIRECTORY")){
+						rootPath = text.substring(text.indexOf('=') + 1).trim();
+					}
+					if(substr.trim().equals("SCENARIO_DIRECTORY")){
+						scenPath = text.substring(text.indexOf('=') + 1);
+					}
+					if(substr.trim().equals("OUTPUT_DIRECTORY")){
+						dataPath = text.substring(text.indexOf('=') + 1);
+					}
+					if(substr.trim().equals("NUMBER_OF_ITERATIONS")){
+						numIterations = text.substring(text.indexOf('=') + 1);
+					}
+				}
+			}
+		}
+		catch(FileNotFoundException e){
+			e.printStackTrace();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+		finally{
+			try{
+				if(reader != null){
+					reader.close();
+				}
+			}
+			catch(IOException e){
+				e.printStackTrace();
+			}
+		}
+		sleuthRootTF.setText(rootPath);
+		sleuthScenarioTF.setText(scenPath);
+		dataOutputTF.setText(dataPath);
+		numIterationsTF.setText(numIterations);
 	}
 }

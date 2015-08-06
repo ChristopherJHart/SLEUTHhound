@@ -24,6 +24,10 @@ public class Sleuth extends SwingWorker<Void, String>{
 	private BufferedImage img;
 	private String fullDataPath;
 	private String seedDataPath;
+	private long totalImgPixels;
+	private long totalTimeRemaining;
+	private long iterationsRemaining;
+	private long time; 
 	
 	public Sleuth(String rtPath, String scnPath, String outDir, String eYear, String scnName, int i, BufferedImage image, String data, String seed){
 		rootPath = rtPath;
@@ -35,27 +39,7 @@ public class Sleuth extends SwingWorker<Void, String>{
 		img = image;
 		fullDataPath = data;
 		seedDataPath = seed;
-	}
-	
-	public void run(String rootPath, String scenPath, int iterations){
-		Timer sleuthRunTime = new Timer(System.nanoTime());
-		for(int i = 0; i < iterations; i++){
-			try {
-				String output = "Running SLEUTH, iteration " + (i + 1) + " of " + iterations;
-				publish(output);
-				Process proc = new ProcessBuilder(rootPath + "\\grow.exe", "predict", scenPath).start();
-				BufferedReader input = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-				while(input.readLine() != null){}
-				proc.waitFor();
-				img = ImageAnalysis.openImageFile(img, outputDir, endYear, scenName);
-				ImageAnalysis.analyzeImageFile(img, i, fullDataPath, seedDataPath);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		this.addTotalTime(sleuthRunTime.time());
+		time = 0;
 	}
 	
 	public void addTotalTime(long time){
@@ -138,24 +122,29 @@ public class Sleuth extends SwingWorker<Void, String>{
 	@Override
 	protected Void doInBackground() throws Exception {
 		Timer sleuthRunTime = new Timer(System.nanoTime());
+		iterationsRemaining = iterations;
 		for(int i = 0; i < iterations; i++){
 			try {
 				String output = "Running SLEUTH, iteration " + (i + 1) + " of " + iterations;
-				publish(output);
-				console.println(scenPath);
+				
 				Process proc = new ProcessBuilder(rootPath + "\\grow.exe", "predict", scenPath).start();
 				BufferedReader input = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 				while(input.readLine() != null){
-					console.println(input.readLine());
+					//console.println(input.readLine());
 				}
 				proc.waitFor();
 				img = ImageAnalysis.openImageFile(img, outputDir, endYear, scenName);
+				this.setTotalPixels(img.getHeight() * img.getWidth());
+				publish(output);
+				publish(""+this.getTotalTimeRemaining());
+				publish(""+this.getTotalEstimatedTime());
 				ImageAnalysis.analyzeImageFile(img, i, fullDataPath, seedDataPath);
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			iterationsRemaining--;
 		}
 		this.addTotalTime(sleuthRunTime.time());
 	return null;
@@ -163,7 +152,12 @@ public class Sleuth extends SwingWorker<Void, String>{
 	
 	@Override
 	protected void process(List<String> chunks){
-		Gui.updateStatusBar(chunks.get(chunks.size()-1));
+		Gui.updateStatusBar(chunks.get(chunks.size()-3));
+		NumberFormat formatter = new DecimalFormat("#0.00");
+		long time = Long.parseLong(chunks.get(chunks.size() - 2));
+		Gui.updateTimeLabel(""+formatter.format(time / 1000000000d));
+		long estTime = Long.parseLong(chunks.get(chunks.size() - 1));
+		Gui.updateTotalTimeLabel(""+formatter.format(estTime / 1000000000d));
 	}
 	
 	@Override
@@ -171,6 +165,29 @@ public class Sleuth extends SwingWorker<Void, String>{
 		Gui.progressBar.setIndeterminate(false);
 		NumberFormat formatter = new DecimalFormat("#0.00000");
 		Gui.progressBar.setString("Done! Total execution time is " + formatter.format(totalSleuthRunTime / 1000000000d) + " seconds.");
-		Main.outputTimers(this.getTotalTime());
+		Gui.updateTimeLabel("0");
+		Main.outputTimers(this.getTotalTime(), this.totalImgPixels, this.getIterations());
+	}
+	
+	public long getTotalPixels(){
+		return totalImgPixels;
+	}
+	
+	public void setTotalPixels(long x){
+		totalImgPixels = x;
+	}
+	
+	public long getIterationsRemaining(){
+		return this.iterationsRemaining;
+	}
+	
+	public long getTotalEstimatedTime(){
+		long time = (this.getTotalPixels() * Main.getCurrentAvgTimePerPixel()) * (this.getIterations());
+		return time;
+	}
+	
+	public long getTotalTimeRemaining(){
+		time = (this.getTotalPixels() * Main.getCurrentAvgTimePerPixel()) * (this.getIterationsRemaining());
+		return time;
 	}
 }

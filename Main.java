@@ -35,6 +35,9 @@ public class Main{
 		
 		String outputDataPath = dataPath + "\\SLEUTH RGB Output.txt";
 		String seedDataPath = dataPath + "\\SLEUTH Seed Output.txt";
+		File settingsFile = getSettingsDirectory();
+		
+		saveSettings(settingsFile, rootPath, scenPath, dataPath, numIterations);
 		
 		int iterations = Integer.parseInt(numIterations);
 		String[] returnVals = parseScenFile(scenPath);
@@ -49,7 +52,7 @@ public class Main{
 		thread1.execute();
 	}
 	
-	public static void outputTimers(long sleuthTime){
+	public static void outputTimers(long sleuthTime, long totalPixels, int iterations){
 		totalOutputDataRunTime = ImageAnalysis.getTotalOutputDataTime();
 		totalAnalyzeRunTime = ImageAnalysis.getTotalAnalyzeTime();
 		totalSleuthRunTime = sleuthTime;
@@ -68,6 +71,7 @@ public class Main{
 		
 		Gui.progressBar.setIndeterminate(false);
 		Gui.progressBar.setString("Done! Total execution time is " + formatter.format(totalRunTime / 1000000000d) + " seconds.");
+		saveRuntimeFile(totalRunTime, totalPixels, iterations);
 		System.out.close();
 	}
 	
@@ -167,5 +171,105 @@ public class Main{
 			console.println("SLEUTH output directory does not exist. Creating directory to prevent SLEUTH errors.");
 			new File(outputDir).mkdir();
 		}
+	}
+	
+	public static File getSettingsDirectory(){
+		File settings = null;
+		String userHome = System.getProperty("user.home");
+		if(userHome == null){
+			throw new IllegalStateException("user.home == null");
+		}
+		String settingsFile = userHome + "\\Documents\\SLEUTHhound\\config.ini";
+		settings = new File(settingsFile);
+		if(!settings.exists()){
+			console.println("Settings file/directory does not exist. Creating now.");
+			settings.getParentFile().mkdirs();
+			try {
+				settings.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return settings;
+	}
+	
+	public static void saveSettings(File settingsFile, String rootPath, String scenPath, String dataPath, String numIterations){
+		try(PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(settingsFile)))){
+			out.println("ROOT_DIRECTORY=" + rootPath);
+			out.println("SCENARIO_DIRECTORY=" + scenPath);
+			out.println("OUTPUT_DIRECTORY=" + dataPath);
+			out.println("NUMBER_OF_ITERATIONS=" + numIterations);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static File getRuntimeDirectory(){
+		File runtime = null;
+		String userHome = System.getProperty("user.home");
+		if(userHome == null){
+			throw new IllegalStateException("user.home == null");
+		}
+		String runtimeFile = userHome + "\\Documents\\SLEUTHhound\\runtime.ini";
+		runtime = new File(runtimeFile);
+		if(!runtime.exists()){
+			console.println("Runtime file/directory does not exist. Creating now.");
+			runtime.getParentFile().mkdirs();
+			try {
+				runtime.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return runtime;
+	}
+	
+	public static void saveRuntimeFile(long totalRuntime, long totalPixels, int iterations){
+		File runtimeFile = getRuntimeDirectory();
+		long avgTimePerPixel = calculateTimePerPixel(totalRuntime, totalPixels, iterations);
+		try(PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(runtimeFile, true)))){
+			out.println(avgTimePerPixel);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static long calculateTimePerPixel(long totalRuntime, long totalPixels, int iterations){
+		long runtimePerIteration = totalRuntime / iterations;
+		long timePerPixel = runtimePerIteration / totalPixels;
+		return timePerPixel;
+	}
+	
+	public static long getCurrentAvgTimePerPixel(){
+		BufferedReader reader = null;
+		long currentAverage = 0;
+		File runtimeFile = getRuntimeDirectory();
+		try{
+			reader = new BufferedReader(new FileReader(runtimeFile));
+			String text;
+			int i = 1;
+			long sum = 0;
+			while((text = reader.readLine()) != null){
+				sum += Long.parseLong(text);
+				i++;
+			}
+			currentAverage = sum / i;
+		} catch(FileNotFoundException e){
+			e.printStackTrace();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+		finally{
+			try{
+				if(reader != null){
+					reader.close();
+				}
+			}
+			catch(IOException e){
+				e.printStackTrace();
+			}
+		}
+		return currentAverage;
 	}
 }

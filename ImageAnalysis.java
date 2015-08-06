@@ -42,7 +42,6 @@ public class ImageAnalysis {
 	public static BufferedImage openImageFile(BufferedImage img, String outputDir, String endYear, String scenName){
 		Timer openImageRunTime = new Timer(System.nanoTime());
 		try{
-			console.println(outputDir + "\\" + scenName + "urban_" + endYear + ".gif");
 			img = ImageIO.read(new File(outputDir + "\\" + scenName + "urban_" + endYear + ".gif"));
 			totalOpenImageRunTime += openImageRunTime.time();
 			return img;
