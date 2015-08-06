@@ -8,11 +8,12 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+
 import javax.swing.SwingWorker;
 
 public class Sleuth extends SwingWorker<Void, String>{
 	
-	PrintStream console = new PrintStream(new FileOutputStream(FileDescriptor.out));
+	static PrintStream console = new PrintStream(new FileOutputStream(FileDescriptor.out));
 	
 	private long totalSleuthRunTime = 0;
 	private String rootPath;
@@ -25,7 +26,6 @@ public class Sleuth extends SwingWorker<Void, String>{
 	private String fullDataPath;
 	private String seedDataPath;
 	private long totalImgPixels;
-	private long totalTimeRemaining;
 	private long iterationsRemaining;
 	private long time; 
 	
@@ -153,11 +153,34 @@ public class Sleuth extends SwingWorker<Void, String>{
 	@Override
 	protected void process(List<String> chunks){
 		Gui.updateStatusBar(chunks.get(chunks.size()-3));
-		NumberFormat formatter = new DecimalFormat("#0.00");
 		long time = Long.parseLong(chunks.get(chunks.size() - 2));
-		Gui.updateTimeLabel(""+formatter.format(time / 1000000000d));
+		Gui.updateTimeLabel(parseNanoToNormal(time));
 		long estTime = Long.parseLong(chunks.get(chunks.size() - 1));
-		Gui.updateTotalTimeLabel(""+formatter.format(estTime / 1000000000d));
+		Gui.updateTotalTimeLabel(parseNanoToNormal(estTime));
+	}
+	
+	public static String parseNanoToNormal(long nano){
+		long second;
+		long minute;
+		long hour;
+		
+		String str = "";
+		
+		second = (nano / 1000000000) % 60;
+		minute = (nano / ((long)1000000000 * 60)) % 60;
+		hour = (nano / ((long)1000000000 * 60 * 60)) % 24;
+		
+		if(hour > 0){
+			str = hour + "h, " + minute + "m, " + second + "s";
+		}
+		else if(minute > 0){
+			str = minute + "m, " + second + "s";
+		}
+		else if(second > 0){
+			str = second + "s";
+		}
+		
+		return str;
 	}
 	
 	@Override

@@ -190,11 +190,11 @@ public class Gui extends JFrame
 	}
 	
 	public static void updateTimeLabel(String str){
-		timeLabel.setText("Estimated job time: " + str + " seconds.");
+		timeLabel.setText("Estimated job time: " + str);
 	}
 	
 	public static void updateTotalTimeLabel(String str){
-		totalTimeLabel.setText("Total job time: ~" + str + " seconds.");
+		totalTimeLabel.setText("Total job time: ~" + str);
 	}
 	
 	public static void setProgressBarDeterminate(boolean bool){
