@@ -5,6 +5,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+
+import javax.imageio.ImageIO;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,6 +35,7 @@ public class Main{
 		String numIterations = args[3];
 		
 		BufferedImage img = null;
+		int totalPixels = 0;
 		
 		String outputDataPath = dataPath + "\\SLEUTH RGB Output.txt";
 		String seedDataPath = dataPath + "\\SLEUTH Seed Output.txt";
@@ -44,6 +48,18 @@ public class Main{
 		String outputDir = returnVals[0];
 		String endYear = returnVals[1];
 		String scenName = returnVals[2];
+		String inputDir = returnVals[3];
+		
+		totalPixels = getTotalPixels(inputDir);
+		
+		try {
+			ensureFreeDiskSpace(numIterations, dataPath, totalPixels);
+		} catch (IOException e) {
+			Gui.updateStatusBar("Not enough disk space!");
+			Gui.setProgressBarDeterminate(false);
+			e.printStackTrace();
+			return;
+		}
 		
 		ensureOutputDirExists(outputDir);
 		initPrintStream(outputDataPath, seedDataPath);
@@ -104,21 +120,27 @@ public class Main{
 	public static String[] parseScenFile(String scenPath){
 		File file = new File(scenPath);
 		BufferedReader reader = null;
-		String[] returnVals = new String[3];
+		String[] returnVals = new String[4];
 		String outputDir = null;
 		String endYear = null;
+		String inputDir = null;
 		boolean foundOutputDir = false;
 		boolean foundEndYear = false;
+		boolean foundInputDir = false;
 		try{
 			reader = new BufferedReader(new FileReader(file));
 			String text;
 			while((text = reader.readLine()) != null){
-				if(foundOutputDir && foundEndYear){
+				if(foundOutputDir && foundEndYear && foundInputDir){
 					break;
 				}
 				if(!text.isEmpty()){
 					if(text.charAt(0) != '#'){
 						String substr = text.substring(0, text.indexOf('='));
+						if(substr.trim().equals("INPUT_DIR")){
+							inputDir = text.substring(text.indexOf('=') + 1).trim();
+							foundInputDir = true;
+						}
 						if(substr.trim().equals("OUTPUT_DIR")){
 							outputDir = text.substring(text.indexOf('=') + 1).trim();
 							foundOutputDir = true;
@@ -162,6 +184,7 @@ public class Main{
 		returnVals[0] = outputDir;
 		returnVals[1] = endYear;
 		returnVals[2] = scenName;
+		returnVals[3] = inputDir;
 		return returnVals;
 	}
 	
@@ -271,5 +294,29 @@ public class Main{
 			}
 		}
 		return currentAverage;
+	}
+	
+	public static void ensureFreeDiskSpace(String iterations, String dataPath, int totalPixels) throws IOException{
+		File file = new File(dataPath);
+		long totalFreeSpace = file.getUsableSpace();
+		long numIterations = Integer.parseInt(iterations);
+		long estimatedFileSize = (long)(numIterations * 1.15 * totalPixels);
+		if(estimatedFileSize > totalFreeSpace){
+			throw new IOException();
+		}
+	}
+	
+	public static int getTotalPixels(String inputDir){
+		int totalPixels = 0;
+		BufferedImage img = null;
+		File file = new File(inputDir);
+		File[] images = file.listFiles();
+		try {
+			img = ImageIO.read(images[0]);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		totalPixels = img.getHeight() * img.getWidth();
+		return totalPixels;
 	}
 }

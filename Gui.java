@@ -1,3 +1,5 @@
+
+
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -178,7 +180,6 @@ public class Gui extends JFrame
 			
 			String[] args = {rootPath, scenPath, dataPath, nIterations};
 			
-			updateStatusBar("Processing...");
 			progressBar.setIndeterminate(true);
 			setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 			Main.main(args);
